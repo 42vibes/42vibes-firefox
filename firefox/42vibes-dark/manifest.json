@@ -1,0 +1,44 @@
+{
+  "manifest_version": 2,
+  "name": "42vibes Dark",
+  "version": "0.1.0",
+  "description": "Dark theme for Firefox built from the 42vibes palette: deep petrol-navy frame, soft blue-grey text and teal accents.",
+  "icons": {
+    "48": "icons/icon-48.png",
+    "96": "icons/icon-96.png",
+    "128": "icons/icon-128.png"
+  },
+  "theme": {
+    "colors": {
+      "frame": "#050f18",
+      "frame_inactive": "#030913",
+      "tab_background_text": "#bfcdd9",
+      "tab_text": "#f8fafc",
+      "tab_selected": "#1c3c56",
+      "tab_line": "#2fb59d",
+      "toolbar": "#12263a",
+      "toolbar_text": "#f8fafc",
+      "toolbar_field": "#12263a",
+      "toolbar_field_text": "#f8fafc",
+      "toolbar_field_border": "#3a5f78",
+      "toolbar_field_focus": "#1c3c56",
+      "toolbar_top_separator": "#030913",
+      "toolbar_bottom_separator": "#030913",
+      "popup": "#12263a",
+      "popup_text": "#f8fafc",
+      "popup_border": "#3a5f78",
+      "popup_highlight": "#1c3c56",
+      "popup_highlight_text": "#f8fafc",
+      "sidebar": "#12263a",
+      "sidebar_text": "#bfcdd9",
+      "sidebar_border": "#3a5f78",
+      "button_background_hover": "#1c3c56",
+      "icons": "#bfcdd9",
+      "ntp_background": "#050f18",
+      "ntp_text": "#f8fafc"
+    },
+    "properties": {
+      "color_scheme": "dark"
+    }
+  }
+}
