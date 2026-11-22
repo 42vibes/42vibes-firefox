@@ -11,13 +11,19 @@ for the icon glyph). The output is deterministic: no timestamps, stable key
 order, and PNG metadata chunks are dropped, so two runs produce byte-identical
 files.
 
+``--out DIR`` writes the same tree below DIR instead of ``firefox/``. That is
+how ``validate.py`` builds into throw-away directories without touching the
+checked-in artifacts.
+
 Icons are rasterized with ImageMagick (``magick`` or ``convert``). If neither
-is installed, the PNGs already committed in the repository are left untouched
-and a warning is printed.
+is installed, icon rendering is skipped: with the default output the committed
+PNGs stay untouched, with ``--out`` no icons are written at all. Either way a
+warning is printed and the caller must not claim rendered icons.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import shutil
 import struct
@@ -32,6 +38,14 @@ THEME_ROOT = ROOT / "firefox"
 THEME_VERSION = "0.1.0"
 MODES = ("dark", "light")
 ICON_SIZES = (48, 96, 128)
+
+# Explicit Gecko IDs make the themes identifiable for permanent unsigned
+# self-installation on ESR; the two variants must never share an ID.
+GECKO_IDS = {
+    "dark": "42vibes-dark@42vibes.local",
+    "light": "42vibes-light@42vibes.local",
+}
+GECKO_STRICT_MIN_VERSION = "115.0"
 
 DESCRIPTIONS = {
     "dark": (
@@ -58,14 +72,14 @@ ROLE_MAP = {
     "toolbar_text": "semantic.text",
     "toolbar_field": "semantic.surface",
     "toolbar_field_text": "semantic.text",
-    "toolbar_field_border": "semantic.border",
+    "toolbar_field_border": "semantic.border_strong",
     "toolbar_field_focus": "semantic.surface_high",
     "toolbar_top_separator": "semantic.bg_deep",
     "toolbar_bottom_separator": "semantic.bg_deep",
     "popup": "semantic.surface",
     "popup_text": "semantic.text",
     "popup_border": "semantic.border",
-    "popup_highlight": "semantic.surface_high",
+    "popup_highlight": "semantic.surface_selected",
     "popup_highlight_text": "semantic.text",
     "sidebar": "semantic.surface",
     "sidebar_text": "semantic.text_muted",
@@ -129,8 +143,37 @@ def palette_value(palette: dict, mode: str, path: str) -> str:
     return value
 
 
+# Roles that are derived locally instead of being palette tokens: a boundary
+# and a selection surface that need more contrast than the base roles provide.
+# (base path, blend path, weight per mode)
+DERIVED_ROLES = {
+    "semantic.border_strong": ("semantic.border", "semantic.interactive", {"dark": 0.40, "light": 0.70}),
+    "semantic.surface_selected": ("semantic.surface_high", "semantic.interactive", {"dark": 0.55, "light": 0.80}),
+}
+
+
+def blend(first: str, second: str, weight: float) -> str:
+    """Linear RGB blend of two #rrggbb colors, weight applied to second."""
+    a = [int(first.lstrip("#")[i : i + 2], 16) for i in (0, 2, 4)]
+    b = [int(second.lstrip("#")[i : i + 2], 16) for i in (0, 2, 4)]
+    return "#" + "".join(
+        f"{round(x + (y - x) * weight):02x}" for x, y in zip(a, b)
+    )
+
+
 def theme_colors(palette: dict, mode: str) -> dict:
-    return {role: palette_value(palette, mode, path) for role, path in ROLE_MAP.items()}
+    colors = {}
+    for role, path in ROLE_MAP.items():
+        if path in DERIVED_ROLES:
+            base, other, weights = DERIVED_ROLES[path]
+            colors[role] = blend(
+                palette_value(palette, mode, base),
+                palette_value(palette, mode, other),
+                weights[mode],
+            )
+        else:
+            colors[role] = palette_value(palette, mode, path)
+    return colors
 
 
 def manifest(palette: dict, mode: str) -> dict:
@@ -139,6 +182,12 @@ def manifest(palette: dict, mode: str) -> dict:
         "name": f"42vibes {'Dark' if mode == 'dark' else 'Light'}",
         "version": THEME_VERSION,
         "description": DESCRIPTIONS[mode],
+        "browser_specific_settings": {
+            "gecko": {
+                "id": GECKO_IDS[mode],
+                "strict_min_version": GECKO_STRICT_MIN_VERSION,
+            }
+        },
         "icons": {str(size): f"icons/icon-{size}.png" for size in ICON_SIZES},
         "theme": {
             "colors": theme_colors(palette, mode),
@@ -208,12 +257,25 @@ def strip_png_metadata(raw: bytes) -> bytes:
     return bytes(out)
 
 
+def display(path: Path) -> str:
+    """Path relative to the repository when possible, absolute otherwise."""
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
+
+
 def render_icons(palette: dict, mode: str, icon_dir: Path, renderer: str | None) -> bool:
     """Render icons into *icon_dir*. Returns False when ImageMagick is absent."""
     if renderer is None:
         print(
             "warning: ImageMagick (magick/convert) not found; "
-            f"keeping committed PNGs in {icon_dir.relative_to(ROOT)} unchanged",
+            f"icon rendering skipped for {display(icon_dir)}"
+            + (
+                " (committed PNGs left untouched)"
+                if ROOT in icon_dir.parents
+                else " (no icons written)"
+            ),
             file=sys.stderr,
         )
         return False
@@ -252,22 +314,37 @@ def write_json(path: Path, payload: dict) -> None:
     path.write_text(text, encoding="utf-8")
 
 
-def build() -> int:
+def build(out_root: Path) -> int:
     palette = json.loads(PALETTE_PATH.read_text(encoding="utf-8"))
     renderer = find_renderer()
     rendered = False
 
     for mode in MODES:
-        theme_dir = THEME_ROOT / f"42vibes-{mode}"
+        theme_dir = out_root / f"42vibes-{mode}"
         theme_dir.mkdir(parents=True, exist_ok=True)
         write_json(theme_dir / "manifest.json", manifest(palette, mode))
         rendered = render_icons(palette, mode, theme_dir / "icons", renderer) or rendered
 
-    print(f"build: wrote 2 manifests for {', '.join(MODES)}")
+    print(f"build: wrote 2 manifests under {display(out_root)}")
     if rendered:
         print(f"build: rendered icons {', '.join(str(size) for size in ICON_SIZES)} px")
+    else:
+        print("build: icons skipped (no ImageMagick)")
     return 0
 
 
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=THEME_ROOT,
+        metavar="DIR",
+        help="write the theme tree below DIR instead of firefox/",
+    )
+    args = parser.parse_args(argv)
+    return build(args.out)
+
+
 if __name__ == "__main__":
-    sys.exit(build())
+    sys.exit(main())

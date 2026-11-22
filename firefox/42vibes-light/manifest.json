@@ -3,6 +3,12 @@
   "name": "42vibes Light",
   "version": "0.1.0",
   "description": "Light theme for Firefox built from the 42vibes palette: soft blue-grey surfaces, near-black text and deep teal accents.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "42vibes-light@42vibes.local",
+      "strict_min_version": "115.0"
+    }
+  },
   "icons": {
     "48": "icons/icon-48.png",
     "96": "icons/icon-96.png",
@@ -20,14 +26,14 @@
       "toolbar_text": "#08141f",
       "toolbar_field": "#e6eef5",
       "toolbar_field_text": "#08141f",
-      "toolbar_field_border": "#a8bfd1",
+      "toolbar_field_border": "#5388a4",
       "toolbar_field_focus": "#d5e2ee",
       "toolbar_top_separator": "#e6eef5",
       "toolbar_bottom_separator": "#e6eef5",
       "popup": "#e6eef5",
       "popup_text": "#08141f",
       "popup_border": "#a8bfd1",
-      "popup_highlight": "#d5e2ee",
+      "popup_highlight": "#5088a4",
       "popup_highlight_text": "#08141f",
       "sidebar": "#e6eef5",
       "sidebar_text": "#3f5262",

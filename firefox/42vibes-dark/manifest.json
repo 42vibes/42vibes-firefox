@@ -3,6 +3,12 @@
   "name": "42vibes Dark",
   "version": "0.1.0",
   "description": "Dark theme for Firefox built from the 42vibes palette: deep petrol-navy frame, soft blue-grey text and teal accents.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "42vibes-dark@42vibes.local",
+      "strict_min_version": "115.0"
+    }
+  },
   "icons": {
     "48": "icons/icon-48.png",
     "96": "icons/icon-96.png",
@@ -20,14 +26,14 @@
       "toolbar_text": "#f8fafc",
       "toolbar_field": "#12263a",
       "toolbar_field_text": "#f8fafc",
-      "toolbar_field_border": "#3a5f78",
+      "toolbar_field_border": "#457c98",
       "toolbar_field_focus": "#1c3c56",
       "toolbar_top_separator": "#030913",
       "toolbar_bottom_separator": "#030913",
       "popup": "#12263a",
       "popup_text": "#f8fafc",
       "popup_border": "#3a5f78",
-      "popup_highlight": "#1c3c56",
+      "popup_highlight": "#3b7795",
       "popup_highlight_text": "#f8fafc",
       "sidebar": "#12263a",
       "sidebar_text": "#bfcdd9",
