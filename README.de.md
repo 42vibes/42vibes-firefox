@@ -18,6 +18,16 @@ Beide Themes färben Browser-Rahmen, Toolbars, Tabs, Adressleiste, Menüs, Sideb
 und die Neuer-Tab-Seite. Alle Werte stammen aus `semantic.*` und `ansi.*` in
 `vendor/palette.json`.
 
+## Screenshots
+
+Echte Aufnahmen aus Firefox 153.7 (Linux, Xvfb), Theme über `about:debugging`
+als temporäres Add-on geladen. Keine Automatisierungssitzung aktiv, daher ist
+die Adressleiste nicht markiert.
+
+![42vibes Dark in Firefox](docs/firefox-dark.png)
+
+![42vibes Light in Firefox](docs/firefox-light.png)
+
 ## Installation
 
 1. `about:debugging#/runtime/this-firefox` in Firefox öffnen.
